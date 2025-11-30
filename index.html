@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Riego Automático Arduino - 3D Mejorado</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        #container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+        }
+        #canvas-container {
+            flex: 1;
+            position: relative;
+        }
+        #panel {
+            width: 320px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: -5px 0 20px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .section h2 {
+            font-size: 16px;
+            color: #667eea;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .control-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+            font-size: 13px;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+        .value-display {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #667eea;
+            color: white;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-auto {
+            background: #28a745;
+            color: white;
+        }
+        .btn-auto:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .btn-manual {
+            background: #ffc107;
+            color: #333;
+        }
+        .btn-manual:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .btn-on {
+            background: #007bff;
+            color: white;
+        }
+        .btn-on:hover {
+            background: #0056b3;
+        }
+        .btn-off {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-off:hover {
+            background: #c82333;
+        }
+        .btn-active {
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.6);
+            transform: scale(1.05);
+        }
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            margin: 8px 0;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .status-label {
+            font-weight: 600;
+            color: #555;
+            font-size: 13px;
+        }
+        .led {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #ccc;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+        }
+        .led.on {
+            background: #28a745;
+            box-shadow: 0 0 15px #28a745, inset 0 1px 2px rgba(255, 255, 255, 0.3);
+        }
+        .mode-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background: #667eea;
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .info-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+            line-height: 1.5;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+        }
+        .plant-status {
+            font-size: 12px;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .plant-healthy {
+            background: #d4edda;
+            color: #155724;
+        }
+        .plant-thirsty {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .plant-critical {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        /* Estilos para las etiquetas de los componentes */
+        .component-label {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 100;
+        }
+        .component-label.visible {
+            opacity: 1;
+        }
+        
+        /* Mejoras para la visualización de la planta */
+        .plant-details {
+            margin-top: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .plant-details h3 {
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .plant-details p {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="canvas-container"></div>
+        <div id="panel">
+            <h1>🌱 Control de Riego Mejorado</h1>
+            
+            <div class="section">
+                <h2>📊 Sensores</h2>
+                <div class="control-group">
+                    <label>Humedad del Suelo Actual:</label>
+                    <input type="range" id="humidity" min="0" max="100" value="30">
+                    <span class="value-display" id="humidity-value">30%</span>
+                </div>
+                <div class="control-group">
+                    <label>Umbral de Activación:</label>
+                    <input type="range" id="threshold" min="0" max="100" value="40">
+                    <span class="value-display" id="threshold-value">40%</span>
+                </div>
+                <div id="plant-status" class="plant-status plant-thirsty">🌿 Planta necesita agua</div>
+                <div class="plant-details">
+                    <h3>Detalles de la Planta</h3>
+                    <p>Salud: <span id="plant-health-value">70%</span></p>
+                    <p>Crecimiento: <span id="plant-growth-value">50%</span></p>
+                    <p>Estado: <span id="plant-state-value">Sedienta</span></p>
+                </div>
+                <p class="info-text">💡 La bomba se activa automáticamente cuando la humedad está por debajo del umbral.</p>
+            </div>
+
+            <div class="section">
+                <h2>🎮 Modo de Operación</h2>
+                <button class="btn-auto btn-active" id="btn-auto">Modo Automático</button>
+                <button class="btn-manual" id="btn-manual">Modo Manual</button>
+                <span class="mode-badge" id="mode-badge">AUTOMÁTICO</span>
+            </div>
+
+            <div class="section">
+                <h2>💧 Control Manual de Bomba</h2>
+                <button class="btn-on" id="btn-pump-on">Encender Bomba</button>
+                <button class="btn-off" id="btn-pump-off">Apagar Bomba</button>
+            </div>
+
+            <div class="section">
+                <h2>📡 Estado del Sistema</h2>
+                <div class="status-indicator">
+                    <span class="status-label">Relay Activo:</span>
+                    <div class="led" id="led-relay"></div>
+                </div>
+                <div class="status-indicator">
+                    <span class="status-label">Bomba Encendida:</span>
+                    <div class="led" id="led-pump"></div>
+                </div>
+                <div class="status-indicator">
+                    <span class="status-label">Regando:</span>
+                    <div class="led" id="led-watering"></div>
+                </div>
+                <div class="status-indicator">
+                    <span class="status-label">Planta Saludable:</span>
+                    <div class="led" id="led-plant"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, controls;
+        let pot, soil, sensor, pump, tube, relay, arduino, plant;
+        let waterParticles = [];
+        let isAutoMode = true;
+        let isPumpOn = false;
+        let humidity = 30;
+        let threshold = 40;
+        let plantHealth = 70;
+        let plantGrowth = 0.5;
+        let componentLabels = {};
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87ceeb);
+            scene.fog = new THREE.Fog(0x87ceeb, 10, 50);
+
+            const container = document.getElementById('canvas-container');
+            camera = new THREE.PerspectiveCamera(
+                45,
+                container.clientWidth / container.clientHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(8, 8, 8);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 10, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+
+            createGround();
+            createPot();
+            createSoil();
+            createSensor();
+            createPump();
+            createTube();
+            createRelay();
+            createArduino();
+            createPlant();
+
+            setupControls();
+            setupEventListeners();
+            createComponentLabels();
+
+            window.addEventListener('resize', onWindowResize);
+            animate();
+        }
+
+        function createGround() {
+            const groundGeometry = new THREE.PlaneGeometry(30, 30);
+            const groundMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x90ee90,
+                roughness: 0.8
+            });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+        }
+
+        function createPot() {
+            const potGeometry = new THREE.CylinderGeometry(1.5, 1.2, 2, 32);
+            const potMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xd2691e,
+                roughness: 0.7
+            });
+            pot = new THREE.Mesh(potGeometry, potMaterial);
+            pot.position.set(0, 1, 0);
+            pot.castShadow = true;
+            pot.receiveShadow = true;
+            pot.userData = { name: "Maceta", description: "Contenedor para la planta y tierra" };
+            scene.add(pot);
+        }
+
+        function createSoil() {
+            const soilGeometry = new THREE.CylinderGeometry(1.4, 1.15, 1.5, 32);
+            const soilMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x4a3728,
+                roughness: 0.9
+            });
+            soil = new THREE.Mesh(soilGeometry, soilMaterial);
+            soil.position.set(0, 1.25, 0);
+            soil.castShadow = true;
+            soil.userData = { name: "Tierra", description: "Sustrato para el crecimiento de la planta" };
+            scene.add(soil);
+        }
+
+        function createSensor() {
+            const group = new THREE.Group();
+            
+            const probeGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1, 16);
+            const probeMaterial = new THREE.MeshStandardMaterial({ color: 0xc0c0c0 });
+            
+            const probe1 = new THREE.Mesh(probeGeometry, probeMaterial);
+            probe1.position.set(-0.15, 0.5, 0);
+            group.add(probe1);
+            
+            const probe2 = new THREE.Mesh(probeGeometry, probeMaterial);
+            probe2.position.set(0.15, 0.5, 0);
+            group.add(probe2);
+            
+            const bodyGeometry = new THREE.BoxGeometry(0.4, 0.3, 0.15);
+            const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x2196f3 });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.set(0, 1.2, 0);
+            group.add(body);
+            
+            group.position.set(0.8, 0.5, 0);
+            sensor = group;
+            sensor.userData = { name: "Sensor de Humedad", description: "Mide la humedad del suelo" };
+            scene.add(sensor);
+        }
+
+        function createPump() {
+            const group = new THREE.Group();
+            
+            const bodyGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.6, 16);
+            const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x1976d2 });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.castShadow = true;
+            group.add(body);
+            
+            const motorGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+            const motorMaterial = new THREE.MeshStandardMaterial({ color: 0x212121 });
+            const motor = new THREE.Mesh(motorGeometry, motorMaterial);
+            motor.position.set(0, 0.45, 0);
+            group.add(motor);
+            
+            group.position.set(-2, 0.3, -1);
+            pump = group;
+            pump.userData = { name: "Bomba de Agua", description: "Bombea agua hacia la planta" };
+            scene.add(pump);
+        }
+
+        function createTube() {
+            const curve = new THREE.QuadraticBezierCurve3(
+                new THREE.Vector3(-2, 0.6, -1),
+                new THREE.Vector3(-1, 2, 0),
+                new THREE.Vector3(0, 2.5, 0)
+            );
+            
+            const tubeGeometry = new THREE.TubeGeometry(curve, 20, 0.1, 8, false);
+            const tubeMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x00ff00,
+                transparent: true,
+                opacity: 0.7
+            });
+            tube = new THREE.Mesh(tubeGeometry, tubeMaterial);
+            tube.userData = { name: "Tubería", description: "Conduce el agua desde la bomba hasta la planta" };
+            scene.add(tube);
+        }
+
+        function createRelay() {
+            const group = new THREE.Group();
+            
+            const bodyGeometry = new THREE.BoxGeometry(0.6, 0.4, 0.3);
+            const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x1565c0 });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.castShadow = true;
+            group.add(body);
+            
+            const ledGeometry = new THREE.SphereGeometry(0.08, 16, 16);
+            const ledMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xff0000,
+                emissive: 0x000000
+            });
+            const led = new THREE.Mesh(ledGeometry, ledMaterial);
+            led.position.set(0, 0.25, 0);
+            group.add(led);
+            
+            group.position.set(-1, 0.2, -2);
+            group.userData.led = led;
+            relay = group;
+            relay.userData = { name: "Relé", description: "Controla la activación de la bomba" };
+            scene.add(relay);
+        }
+
+        function createArduino() {
+            const group = new THREE.Group();
+            
+            const boardGeometry = new THREE.BoxGeometry(1.2, 0.15, 0.8);
+            const boardMaterial = new THREE.MeshStandardMaterial({ color: 0x006699 });
+            const board = new THREE.Mesh(boardGeometry, boardMaterial);
+            board.castShadow = true;
+            group.add(board);
+            
+            const usbGeometry = new THREE.BoxGeometry(0.2, 0.1, 0.15);
+            const usbMaterial = new THREE.MeshStandardMaterial({ color: 0xc0c0c0 });
+            const usb = new THREE.Mesh(usbGeometry, usbMaterial);
+            usb.position.set(-0.7, 0.05, 0);
+            group.add(usb);
+            
+            for (let i = 0; i < 3; i++) {
+                const pinGeometry = new THREE.BoxGeometry(0.6, 0.05, 0.1);
+                const pinMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+                const pins = new THREE.Mesh(pinGeometry, pinMaterial);
+                pins.position.set(0.2, 0.1, -0.25 + i * 0.25);
+                group.add(pins);
+            }
+            
+            group.position.set(1, 0.075, -2);
+            arduino = group;
+            arduino.userData = { name: "Arduino", description: "Controlador principal del sistema" };
+            scene.add(arduino);
+        }
+
+        function createPlant() {
+            const group = new THREE.Group();
+            
+            // Sistema de raíces
+            const rootGroup = new THREE.Group();
+            const rootGeometry = new THREE.CylinderGeometry(0.02, 0.05, 0.8, 8);
+            const rootMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+            
+            for (let i = 0; i < 8; i++) {
+                const root = new THREE.Mesh(rootGeometry, rootMaterial);
+                const angle = (i / 8) * Math.PI * 2;
+                const spread = 0.3;
+                
+                root.position.set(
+                    Math.cos(angle) * spread,
+                    -0.4,
+                    Math.sin(angle) * spread
+                );
+                
+                root.rotation.x = Math.PI / 2 + (Math.random() - 0.5) * 0.5;
+                root.rotation.z = angle;
+                root.scale.set(1, 0.5 + Math.random() * 0.5, 1);
+                rootGroup.add(root);
+            }
+            group.add(rootGroup);
+            
+            // Tallo principal
+            const stemGeometry = new THREE.CylinderGeometry(0.05, 0.08, 1.5, 8);
+            const stemMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+            const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+            stem.position.set(0, 2.5, 0);
+            stem.castShadow = true;
+            group.add(stem);
+            
+            // Ramas secundarias
+            for (let i = 0; i < 4; i++) {
+                const branchGeometry = new THREE.CylinderGeometry(0.03, 0.02, 0.8, 8);
+                const branchMaterial = new THREE.MeshStandardMaterial({ color: 0x32CD32 });
+                const branch = new THREE.Mesh(branchGeometry, branchMaterial);
+                
+                const angle = (i / 4) * Math.PI * 2;
+                const height = 2.2 + (i % 2) * 0.6;
+                
+                branch.position.set(
+                    Math.cos(angle) * 0.3,
+                    height,
+                    Math.sin(angle) * 0.3
+                );
+                
+                branch.rotation.x = Math.PI / 2;
+                branch.rotation.z = angle;
+                branch.castShadow = true;
+                group.add(branch);
+                
+                // Hojas en las ramas
+                for (let j = 0; j < 3; j++) {
+                    createLeaf(group, 
+                        Math.cos(angle) * 0.3 + (Math.random() - 0.5) * 0.2,
+                        height - 0.2 + j * 0.15,
+                        Math.sin(angle) * 0.3 + (Math.random() - 0.5) * 0.2,
+                        angle + (Math.random() - 0.5) * 0.5
+                    );
+                }
+            }
+            
+            // Hojas principales en el tallo
+            for (let i = 0; i < 6; i++) {
+                createLeaf(group, 
+                    Math.cos(i * Math.PI/3) * 0.2,
+                    2.0 + (i % 3) * 0.4,
+                    Math.sin(i * Math.PI/3) * 0.2,
+                    i * Math.PI/3
+                );
+            }
+            
+            // Flores
+            const flowerGroup = new THREE.Group();
+            
+            // Pétalos
+            const petalGeometry = new THREE.SphereGeometry(0.15, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+            const petalMaterial = new THREE.MeshStandardMaterial({ color: 0xFF69B4 });
+            
+            for (let i = 0; i < 6; i++) {
+                const petal = new THREE.Mesh(petalGeometry, petalMaterial);
+                const angle = (i / 6) * Math.PI * 2;
+                
+                petal.position.set(
+                    Math.cos(angle) * 0.25,
+                    0,
+                    Math.sin(angle) * 0.25
+                );
+                
+                petal.rotation.x = Math.PI / 2;
+                petal.rotation.z = angle;
+                petal.scale.set(1, 0.5, 0.3);
+                petal.castShadow = true;
+                flowerGroup.add(petal);
+            }
+            
+            // Centro de la flor
+            const centerGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+            const centerMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFF00 });
+            const center = new THREE.Mesh(centerGeometry, centerMaterial);
+            center.castShadow = true;
+            flowerGroup.add(center);
+            
+            flowerGroup.position.set(0, 3.8, 0);
+            group.add(flowerGroup);
+            
+            // Frutos pequeños
+            for (let i = 0; i < 3; i++) {
+                const fruitGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+                const fruitMaterial = new THREE.MeshStandardMaterial({ color: 0xFF4500 });
+                const fruit = new THREE.Mesh(fruitGeometry, fruitMaterial);
+                
+                fruit.position.set(
+                    Math.cos(i * Math.PI/1.5) * 0.15,
+                    3.2,
+                    Math.sin(i * Math.PI/1.5) * 0.15
+                );
+                
+                fruit.castShadow = true;
+                group.add(fruit);
+            }
+            
+            group.userData = { 
+                name: "Planta", 
+                description: "Planta que está siendo regada automáticamente",
+                flower: flowerGroup,
+                stem: stem,
+                roots: rootGroup,
+                leaves: []
+            };
+            
+            // Recopilar todas las hojas
+            group.traverse((child) => {
+                if (child.userData && child.userData.isLeaf) {
+                    group.userData.leaves.push(child);
+                }
+            });
+            
+            plant = group;
+            scene.add(plant);
+        }
+
+        function createLeaf(parent, x, y, z, rotation) {
+            const leafGeometry = new THREE.SphereGeometry(0.2, 8, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+            const leafMaterial = new THREE.MeshStandardMaterial({ color: 0x32CD32 });
+            const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+            
+            leaf.position.set(x, y, z);
+            leaf.rotation.x = Math.PI / 2;
+            leaf.rotation.z = rotation;
+            leaf.scale.set(1, 0.7, 0.5);
+            leaf.castShadow = true;
+            leaf.userData = { isLeaf: true };
+            
+            parent.add(leaf);
+            return leaf;
+        }
+
+        function updatePlantHealth() {
+            // La salud de la planta depende de la humedad
+            if (humidity < 20) {
+                plantHealth = Math.max(0, plantHealth - 0.5);
+            } else if (humidity > 60) {
+                plantHealth = Math.min(100, plantHealth + 0.2);
+            } else {
+                plantHealth = Math.min(100, plantHealth + 0.1);
+            }
+            
+            // El crecimiento depende de la salud
+            if (plantHealth > 50) {
+                plantGrowth = Math.min(1, plantGrowth + 0.001);
+            } else {
+                plantGrowth = Math.max(0.3, plantGrowth - 0.001);
+            }
+            
+            // Actualizar el estado visual de la planta según su salud
+            if (plant) {
+                // Escalar la planta según su crecimiento
+                const scale = 0.5 + plantGrowth * 0.5;
+                plant.scale.set(scale, scale, scale);
+                
+                // Cambiar color según la salud
+                const healthRatio = plantHealth / 100;
+                
+                // Tallo - se vuelve marrón cuando está poco saludable
+                const stemColor = new THREE.Color();
+                stemColor.setHSL(0.3 * healthRatio, 0.8, 0.4);
+                plant.userData.stem.material.color = stemColor;
+                
+                // Hojas - se vuelven amarillas/marrones cuando están poco saludables
+                const leafColor = new THREE.Color();
+                leafColor.setHSL(0.3 * healthRatio, 0.8, 0.5);
+                
+                plant.userData.leaves.forEach(leaf => {
+                    leaf.material.color = leafColor;
+                });
+                
+                // Raíces - se vuelven más oscuras cuando están poco saludables
+                const rootColor = new THREE.Color();
+                rootColor.setHSL(0.1 * healthRatio, 0.8, 0.3);
+                
+                plant.userData.roots.children.forEach(root => {
+                    root.material.color = rootColor;
+                });
+                
+                // Flor - se marchita cuando la planta está poco saludable
+                if (plantHealth < 30) {
+                    plant.userData.flower.visible = false;
+                } else {
+                    plant.userData.flower.visible = true;
+                    const flowerScale = Math.max(0.3, healthRatio);
+                    plant.userData.flower.scale.set(flowerScale, flowerScale, flowerScale);
+                }
+            }
+            
+            // Actualizar indicador de estado de la planta
+            const plantStatus = document.getElementById('plant-status');
+            const plantLed = document.getElementById('led-plant');
+            const plantHealthValue = document.getElementById('plant-health-value');
+            const plantGrowthValue = document.getElementById('plant-growth-value');
+            const plantStateValue = document.getElementById('plant-state-value');
+            
+            plantHealthValue.textContent = Math.round(plantHealth) + '%';
+            plantGrowthValue.textContent = Math.round(plantGrowth * 100) + '%';
+            
+            if (plantHealth > 70) {
+                plantStatus.textContent = "🌿 Planta saludable";
+                plantStatus.className = "plant-status plant-healthy";
+                plantStateValue.textContent = "Saludable";
+                plantLed.classList.add('on');
+            } else if (plantHealth > 30) {
+                plantStatus.textContent = "🌿 Planta necesita agua";
+                plantStatus.className = "plant-status plant-thirsty";
+                plantStateValue.textContent = "Sedienta";
+                plantLed.classList.remove('on');
+            } else {
+                plantStatus.textContent = "🌿 Planta en estado crítico";
+                plantStatus.className = "plant-status plant-critical";
+                plantStateValue.textContent = "Crítico";
+                plantLed.classList.remove('on');
+            }
+        }
+
+        function createWaterParticle() {
+            const geometry = new THREE.SphereGeometry(0.05, 8, 8);
+            const material = new THREE.MeshStandardMaterial({ 
+                color: 0x1e90ff,
+                transparent: true,
+                opacity: 0.8
+            });
+            const particle = new THREE.Mesh(geometry, material);
+            particle.position.set(0, 2.5, 0);
+            particle.userData.velocity = new THREE.Vector3(
+                (Math.random() - 0.5) * 0.1,
+                -0.1,
+                (Math.random() - 0.5) * 0.1
+            );
+            scene.add(particle);
+            waterParticles.push(particle);
+        }
+
+        function updateWaterParticles() {
+            for (let i = waterParticles.length - 1; i >= 0; i--) {
+                const particle = waterParticles[i];
+                particle.position.add(particle.userData.velocity);
+                particle.userData.velocity.y -= 0.002;
+                
+                if (particle.position.y < 1.8) {
+                    scene.remove(particle);
+                    waterParticles.splice(i, 1);
+                }
+            }
+        }
+
+        function createComponentLabels() {
+            const components = [pot, soil, sensor, pump, tube, relay, arduino, plant];
+            
+            components.forEach(component => {
+                const label = document.createElement('div');
+                label.className = 'component-label';
+                label.textContent = component.userData.name;
+                document.getElementById('canvas-container').appendChild(label);
+                componentLabels[component.userData.name] = {
+                    element: label,
+                    component: component
+                };
+            });
+        }
+
+        function updateComponentLabels() {
+            Object.values(componentLabels).forEach(item => {
+                const { element, component } = item;
+                const vector = new THREE.Vector3();
+                
+                // Obtener la posición del componente en coordenadas de pantalla
+                component.getWorldPosition(vector);
+                vector.project(camera);
+                
+                const x = (vector.x * 0.5 + 0.5) * renderer.domElement.clientWidth;
+                const y = (-vector.y * 0.5 + 0.5) * renderer.domElement.clientHeight;
+                
+                element.style.left = `${x}px`;
+                element.style.top = `${y}px`;
+            });
+        }
+
+        function setupControls() {
+            let isDragging = false;
+            let previousMousePosition = { x: 0, y: 0 };
+            let rotation = { x: 0, y: 0 };
+
+            const container = document.getElementById('canvas-container');
+
+            container.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            container.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const deltaX = e.clientX - previousMousePosition.x;
+                    const deltaY = e.clientY - previousMousePosition.y;
+
+                    rotation.y += deltaX * 0.005;
+                    rotation.x += deltaY * 0.005;
+
+                    rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, rotation.x));
+
+                    const radius = 12;
+                    camera.position.x = radius * Math.sin(rotation.y) * Math.cos(rotation.x);
+                    camera.position.y = radius * Math.sin(rotation.x) + 5;
+                    camera.position.z = radius * Math.cos(rotation.y) * Math.cos(rotation.x);
+                    camera.lookAt(0, 2, 0);
+
+                    previousMousePosition = { x: e.clientX, y: e.clientY };
+                }
+                
+                // Actualizar posición del ratón para el raycaster
+                mouse.x = (e.clientX / renderer.domElement.clientWidth) * 2 - 1;
+                mouse.y = -(e.clientY / renderer.domElement.clientHeight) * 2 + 1;
+                
+                // Detectar componentes bajo el cursor
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(scene.children, true);
+                
+                // Ocultar todas las etiquetas primero
+                Object.values(componentLabels).forEach(item => {
+                    item.element.classList.remove('visible');
+                });
+                
+                // Mostrar etiqueta del componente intersectado
+                if (intersects.length > 0) {
+                    let object = intersects[0].object;
+                    
+                    // Buscar el objeto padre que tiene userData
+                    while (object && !object.userData.name) {
+                        object = object.parent;
+                    }
+                    
+                    if (object && object.userData.name && componentLabels[object.userData.name]) {
+                        componentLabels[object.userData.name].element.classList.add('visible');
+                        componentLabels[object.userData.name].element.textContent = 
+                            `${object.userData.name}: ${object.userData.description}`;
+                    }
+                }
+            });
+
+            container.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const zoomSpeed = 0.1;
+                const direction = e.deltaY > 0 ? 1 : -1;
+                
+                camera.position.multiplyScalar(1 + direction * zoomSpeed);
+            });
+        }
+
+        function setupEventListeners() {
+            document.getElementById('humidity').addEventListener('input', (e) => {
+                humidity = parseInt(e.target.value);
+                document.getElementById('humidity-value').textContent = humidity + '%';
+                updateAutoMode();
+                updatePlantHealth();
+            });
+
+            document.getElementById('threshold').addEventListener('input', (e) => {
+                threshold = parseInt(e.target.value);
+                document.getElementById('threshold-value').textContent = threshold + '%';
+                updateAutoMode();
+            });
+
+            document.getElementById('btn-auto').addEventListener('click', () => {
+                isAutoMode = true;
+                document.getElementById('btn-auto').classList.add('btn-active');
+                document.getElementById('btn-manual').classList.remove('btn-active');
+                document.getElementById('mode-badge').textContent = 'AUTOMÁTICO';
+                updateAutoMode();
+            });
+
+            document.getElementById('btn-manual').addEventListener('click', () => {
+                isAutoMode = false;
+                document.getElementById('btn-auto').classList.remove('btn-active');
+                document.getElementById('btn-manual').classList.add('btn-active');
+                document.getElementById('mode-badge').textContent = 'MANUAL';
+            });
+
+            document.getElementById('btn-pump-on').addEventListener('click', () => {
+                if (!isAutoMode) {
+                    isPumpOn = true;
+                    updateStatus();
+                }
+            });
+
+            document.getElementById('btn-pump-off').addEventListener('click', () => {
+                if (!isAutoMode) {
+                    isPumpOn = false;
+                    updateStatus();
+                }
+            });
+        }
+
+        function updateAutoMode() {
+            if (isAutoMode) {
+                isPumpOn = humidity < threshold;
+                updateStatus();
+            }
+        }
+
+        function updateStatus() {
+            const relayLed = document.getElementById('led-relay');
+            const pumpLed = document.getElementById('led-pump');
+            const wateringLed = document.getElementById('led-watering');
+
+            if (isPumpOn) {
+                relayLed.classList.add('on');
+                pumpLed.classList.add('on');
+                wateringLed.classList.add('on');
+                
+                if (relay.userData.led) {
+                    relay.userData.led.material.emissive.setHex(0xff0000);
+                }
+                
+                // Cambiar color de la tubería cuando está activa
+                tube.material.color.setHex(0x00ff00);
+            } else {
+                relayLed.classList.remove('on');
+                pumpLed.classList.remove('on');
+                wateringLed.classList.remove('on');
+                
+                if (relay.userData.led) {
+                    relay.userData.led.material.emissive.setHex(0x000000);
+                }
+                
+                // Cambiar color de la tubería cuando está inactiva
+                tube.material.color.setHex(0x666666);
+            }
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (isPumpOn && Math.random() > 0.7) {
+                createWaterParticle();
+            }
+
+            updateWaterParticles();
+            updatePlantHealth();
+            updateComponentLabels();
+
+            if (pump) {
+                pump.rotation.y += isPumpOn ? 0.1 : 0;
+            }
+
+            // Animación sutil de la planta
+            if (plant && plant.userData.flower) {
+                plant.userData.flower.rotation.y += 0.01;
+                
+                // Movimiento suave de las hojas
+                plant.userData.leaves.forEach((leaf, index) => {
+                    leaf.rotation.x = Math.PI / 2 + Math.sin(Date.now() * 0.001 + index) * 0.05;
+                });
+                
+                // Movimiento sutil de las raíces
+                plant.userData.roots.rotation.y += 0.002;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body>
+</html>
